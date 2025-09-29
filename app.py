@@ -20,7 +20,7 @@ import os
 app = Flask(__name__)
 app.secret_key = os.environ.get('SESSION_SECRET', 'your-secret-key-here')
 
-DATABASE = 'data/meal_planner.db'
+DATABASE = 'data/data/meal_planner.db'
 
 def get_db_connection():
     """Create a database connection"""
