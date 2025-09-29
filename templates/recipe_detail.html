@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}{{ recipe.title }} - Meal Planner{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0">{{ recipe.title }}</h1>
+                    <span class="badge bg-light text-primary fs-6">
+                        <i class="fas fa-{{ 'coffee' if recipe.meal_type == 'breakfast' else 'hamburger' if recipe.meal_type == 'lunch' else 'pizza-slice' if recipe.meal_type == 'dinner' else 'cookie-bite' if recipe.meal_type == 'dessert' else 'wine-glass' if recipe.meal_type == 'drink' else 'star' }} me-1"></i>
+                        {{ recipe.meal_type.title() }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Recipe Tags -->
+                <div class="mb-3">
+                    {% if recipe.dietary_tags %}
+                    <div class="mb-2">
+                        <strong>Dietary:</strong>
+                        {% for tag in recipe.dietary_tags %}
+                        <span class="badge bg-success me-1">
+                            <i class="fas fa-leaf me-1"></i>{{ tag.title() }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if recipe.races %}
+                    <div class="mb-2">
+                        <strong>Cuisine:</strong>
+                        {% for race in recipe.races %}
+                        <span class="badge bg-info me-1">
+                            <i class="fas fa-globe me-1"></i>{{ race }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Nutrition Information -->
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-chart-bar me-2"></i>Nutrition Information
+                        </h5>
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <div class="nutrition-stat">
+                                    <i class="fas fa-fire text-danger fs-4"></i>
+                                    <div class="fw-bold fs-5">{{ recipe.calories }}</div>
+                                    <small class="text-muted">Calories</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="nutrition-stat">
+                                    <i class="fas fa-drumstick-bite text-primary fs-4"></i>
+                                    <div class="fw-bold fs-5">{{ recipe.protein }}g</div>
+                                    <small class="text-muted">Protein</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="nutrition-stat">
+                                    <i class="fas fa-bread-slice text-warning fs-4"></i>
+                                    <div class="fw-bold fs-5">{{ recipe.carbs }}g</div>
+                                    <small class="text-muted">Carbs</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="nutrition-stat">
+                                    <i class="fas fa-tint text-info fs-4"></i>
+                                    <div class="fw-bold fs-5">{{ recipe.fat }}g</div>
+                                    <small class="text-muted">Fat</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="mb-4">
+                    <h5>
+                        <i class="fas fa-list-ol me-2"></i>Instructions
+                    </h5>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            {{ recipe.instructions }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rating System -->
+                <div class="card border-warning">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0">
+                            <i class="fas fa-star me-2"></i>Rate this Recipe
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="ratingForm" onsubmit="submitRating(event)">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="btn-group" role="group" aria-label="Recipe rating">
+                                    {% for i in range(1, 6) %}
+                                    <input type="radio" class="btn-check" name="rating" id="rating{{ i }}" value="{{ i }}" {% if recipe.rating == i %}checked{% endif %}>
+                                    <label class="btn btn-outline-warning" for="rating{{ i }}">
+                                        <i class="fas fa-star"></i>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-save me-1"></i>Save Rating
+                                </button>
+                                {% if recipe.rating %}
+                                <div class="ms-3">
+                                    <span class="badge bg-warning text-dark fs-6">
+                                        Current: {{ recipe.rating }}/5 stars
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </form>
+                        <div id="ratingMessage" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ingredients Sidebar -->
+    <div class="col-lg-4">
+        <div class="card shadow sticky-top" style="top: 20px;">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-shopping-basket me-2"></i>Ingredients
+                </h4>
+            </div>
+            <div class="card-body">
+                {% if recipe.ingredients %}
+                    {% set ingredients_by_category = recipe.ingredients | groupby('category') %}
+                    {% for category, ingredients in ingredients_by_category %}
+                    <div class="ingredient-category mb-3">
+                        <h6 class="text-success text-uppercase fw-bold mb-2">
+                            <i class="fas fa-{{ 'drumstick-bite' if category == 'protein' else 'carrot' if category == 'vegetable' else 'bread-slice' if category == 'grain' else 'cheese' if category == 'dairy' else 'pepper-hot' if category == 'spice' else 'apple-alt' if category == 'fruit' else 'seedling' if category == 'nuts' else 'tag' }} me-1"></i>
+                            {{ category.title() }}
+                        </h6>
+                        {% for ingredient in ingredients %}
+                        <div class="ingredient-item mb-1">
+                            <i class="fas fa-check text-success me-2"></i>{{ ingredient.name }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <p class="text-muted">No ingredients listed for this recipe.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <a href="javascript:history.back()" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Meal Plan
+    </a>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">
+        <i class="fas fa-home me-1"></i>Home
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function submitRating(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const messageDiv = document.getElementById('ratingMessage');
+    
+    try {
+        const response = await fetch('{{ url_for("rate_recipe", recipe_id=recipe.id) }}', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            messageDiv.innerHTML = '<div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check me-2"></i>' + result.message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+            
+            // Update current rating display
+            const rating = formData.get('rating');
+            const currentBadge = document.querySelector('.badge.bg-warning');
+            if (currentBadge) {
+                currentBadge.textContent = `Current: ${rating}/5 stars`;
+            } else {
+                // Add rating badge if it doesn't exist
+                const buttonContainer = document.querySelector('.d-flex.align-items-center.gap-3');
+                buttonContainer.insertAdjacentHTML('beforeend', `
+                    <div class="ms-3">
+                        <span class="badge bg-warning text-dark fs-6">
+                            Current: ${rating}/5 stars
+                        </span>
+                    </div>
+                `);
+            }
+        } else {
+            messageDiv.innerHTML = '<div class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-triangle me-2"></i>' + result.message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+        }
+    } catch (error) {
+        messageDiv.innerHTML = '<div class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-triangle me-2"></i>Error saving rating<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+    }
+}
+</script>
+{% endblock %}
