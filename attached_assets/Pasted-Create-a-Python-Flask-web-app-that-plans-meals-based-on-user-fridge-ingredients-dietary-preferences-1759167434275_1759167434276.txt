@@ -1,0 +1,34 @@
+Create a Python Flask web app that plans meals based on user fridge ingredients, dietary preferences, race/ethnicity, and includes extended meal types using SQLite as the database.
+
+Requirements:
+- No user login or registration.
+- User inputs:
+  - Comma-separated list of fridge ingredients (optional; if empty, auto-generate meal plans without ingredient filtering),
+  - Plan duration (1-30 days),
+  - Dietary preferences (vegan, vegetarian, gluten-free),
+  - Race/ethnicity from dropdown (Asian, African, Hispanic, Caucasian, Middle Eastern).
+
+- Use SQLite database with these tables:
+  - `recipes`: id, title, meal_type (breakfast, lunch, dinner, appetizer, dessert, drink), instructions, calories, protein, carbs, fat.
+  - `ingredients`: id, name, category.
+  - `recipe_ingredients`: recipe_id, ingredient_id.
+  - `recipe_dietary_tags`: recipe_id, tag.
+  - `recipe_races`: recipe_id, race.
+  - `substitutions`: ingredient_id, substitute_ingredient_id.
+  - Optional `ratings`: recipe_id, rating.
+
+- Features:
+  - If user provides ingredients, filter recipes by fridge ingredients (allow substitutions), dietary preferences, and selected race.
+  - If user does NOT provide any ingredients, generate meal plans ignoring ingredient filtering but still respect dietary preferences and race.
+  - Generate meal plans covering all meal types: breakfast, lunch, dinner, appetizer, dessert, and drinks for each day.
+  - Calculate missing ingredients and generate a categorized shopping list.
+  - Generate a PDF including the full meal plan with nutrition info and the shopping list using ReportLab.
+  - Provide export/import of meal plans as JSON.
+  - Responsive UI with Bootstrap 5.
+  - Recipe detail pages accessible via clickable meal names.
+  - Rating system stored locally or in SQLite.
+  - Include code to initialize and populate SQLite with sample data covering all meal types and race tags.
+
+- Organize project with `/templates`, `/static`, `/data` folders.
+
+Please write all necessary files: `app.py`, templates like `index.html`, `recipe_detail.html`, static files as needed, and database initialization/population scripts with sample recipes, ingredients, substitutions, dietary tags, race tags, and meal types including drinks, appetizers, and desserts.
