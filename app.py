@@ -155,6 +155,7 @@ def generate_meal_plan(days, ingredients=None, dietary_prefs=None, race=None):
     """Generate a meal plan for the specified number of days"""
     meal_types = ['breakfast', 'lunch', 'dinner', 'appetizer', 'dessert', 'drink']
     meal_plan = {}
+    used_recipe_ids = set()
     
     for day in range(1, days + 1):
         day_key = f"Day {day}"
@@ -169,14 +170,29 @@ def generate_meal_plan(days, ingredients=None, dietary_prefs=None, race=None):
             )
             
             if recipes:
-                # Select a random recipe from available options
-                selected_recipe = random.choice(recipes)
-                meal_plan[day_key][meal_type] = selected_recipe
+                available_recipes = [r for r in recipes if r['id'] not in used_recipe_ids]
+                
+                if available_recipes:
+                    selected_recipe = random.choice(available_recipes)
+                    meal_plan[day_key][meal_type] = selected_recipe
+                    used_recipe_ids.add(selected_recipe['id'])
+                elif recipes:
+                    selected_recipe = random.choice(recipes)
+                    meal_plan[day_key][meal_type] = selected_recipe
+                    used_recipe_ids.add(selected_recipe['id'])
             else:
-                # Fallback: get any recipe of this meal type
                 fallback_recipes = get_recipes_by_filters(meal_type=meal_type)
                 if fallback_recipes:
-                    meal_plan[day_key][meal_type] = random.choice(fallback_recipes)
+                    available_fallback = [r for r in fallback_recipes if r['id'] not in used_recipe_ids]
+                    
+                    if available_fallback:
+                        selected_recipe = random.choice(available_fallback)
+                        meal_plan[day_key][meal_type] = selected_recipe
+                        used_recipe_ids.add(selected_recipe['id'])
+                    elif fallback_recipes:
+                        selected_recipe = random.choice(fallback_recipes)
+                        meal_plan[day_key][meal_type] = selected_recipe
+                        used_recipe_ids.add(selected_recipe['id'])
     
     return meal_plan
 
