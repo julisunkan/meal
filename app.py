@@ -270,7 +270,7 @@ def recipe_detail(recipe_id):
 def rate_recipe(recipe_id):
     """Update recipe rating"""
     try:
-        rating = int(request.form.get('rating'))
+        rating = int(request.form.get('rating', '0'))
         if 1 <= rating <= 5:
             conn = get_db_connection()
             conn.execute("""
