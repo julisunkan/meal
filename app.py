@@ -438,6 +438,115 @@ def export_json():
         print(f"Error exporting JSON: {e}")
         return "Error exporting JSON", 500
 
+@app.route('/samples')
+def samples():
+    """Show sample meal plans across different cultures"""
+    # Sample 30-day meal plans for different cultures
+    sample_plans = {
+        'Asian': {
+            'title': 'Asian Fusion 30-Day Plan',
+            'description': 'Explore diverse Asian cuisines with balanced nutrition',
+            'highlights': ['Japanese breakfast bowls', 'Thai curry dinners', 'Korean BBQ', 'Chinese stir-fries'],
+            'cultural_focus': 'Asian',
+            'avg_calories': 1850,
+            'preview_meals': [
+                {'day': 1, 'breakfast': 'Miso Soup with Rice', 'lunch': 'Pad Thai', 'dinner': 'Teriyaki Salmon'},
+                {'day': 2, 'breakfast': 'Congee with Vegetables', 'lunch': 'Korean Bibimbap', 'dinner': 'Sweet and Sour Pork'},
+                {'day': 3, 'breakfast': 'Japanese Omelette', 'lunch': 'Ramen Bowl', 'dinner': 'Thai Green Curry'}
+            ]
+        },
+        'Hispanic': {
+            'title': 'Hispanic Heritage 30-Day Plan',
+            'description': 'Celebrate Hispanic flavors with authentic recipes',
+            'highlights': ['Mexican breakfasts', 'Spanish paellas', 'Argentinian grills', 'Cuban classics'],
+            'cultural_focus': 'Hispanic',
+            'avg_calories': 1900,
+            'preview_meals': [
+                {'day': 1, 'breakfast': 'Huevos Rancheros', 'lunch': 'Chicken Quesadilla', 'dinner': 'Beef Tacos'},
+                {'day': 2, 'breakfast': 'Breakfast Burrito', 'lunch': 'Spanish Paella', 'dinner': 'Chiles Rellenos'},
+                {'day': 3, 'breakfast': 'Pan Dulce', 'lunch': 'Cuban Sandwich', 'dinner': 'Arroz con Pollo'}
+            ]
+        },
+        'African': {
+            'title': 'African Diaspora 30-Day Plan',
+            'description': 'Rich flavors from across the African continent',
+            'highlights': ['Ethiopian injera', 'Moroccan tagines', 'West African stews', 'South African braai'],
+            'cultural_focus': 'African',
+            'avg_calories': 1800,
+            'preview_meals': [
+                {'day': 1, 'breakfast': 'Injera with Honey', 'lunch': 'Jollof Rice', 'dinner': 'Moroccan Tagine'},
+                {'day': 2, 'breakfast': 'African Porridge', 'lunch': 'Bobotie', 'dinner': 'Ethiopian Doro Wat'},
+                {'day': 3, 'breakfast': 'Mandazi', 'lunch': 'Thieboudienne', 'dinner': 'South African Potjiekos'}
+            ]
+        },
+        'Middle Eastern': {
+            'title': 'Middle Eastern 30-Day Plan',
+            'description': 'Aromatic spices and ancient grain traditions',
+            'highlights': ['Lebanese mezze', 'Persian rice dishes', 'Turkish delights', 'Israeli breakfast'],
+            'cultural_focus': 'Middle Eastern',
+            'avg_calories': 1750,
+            'preview_meals': [
+                {'day': 1, 'breakfast': 'Shakshuka', 'lunch': 'Hummus Bowl', 'dinner': 'Lamb Kebabs'},
+                {'day': 2, 'breakfast': 'Labneh Toast', 'lunch': 'Falafel Wrap', 'dinner': 'Persian Rice'},
+                {'day': 3, 'breakfast': 'Za\'atar Bread', 'lunch': 'Tabbouleh Salad', 'dinner': 'Turkish Kofta'}
+            ]
+        },
+        'Caucasian': {
+            'title': 'European Heritage 30-Day Plan',
+            'description': 'Classic European comfort foods with modern twists',
+            'highlights': ['Italian pasta', 'French cuisine', 'German hearty meals', 'British classics'],
+            'cultural_focus': 'Caucasian',
+            'avg_calories': 1950,
+            'preview_meals': [
+                {'day': 1, 'breakfast': 'French Toast', 'lunch': 'Caesar Salad', 'dinner': 'Spaghetti Carbonara'},
+                {'day': 2, 'breakfast': 'English Breakfast', 'lunch': 'German Schnitzel', 'dinner': 'Beef Bourguignon'},
+                {'day': 3, 'breakfast': 'Pancakes', 'lunch': 'Italian Risotto', 'dinner': 'Fish and Chips'}
+            ]
+        }
+    }
+    
+    return render_template('samples.html', sample_plans=sample_plans)
+
+@app.route('/generate_sample/<culture>')
+def generate_sample(culture):
+    """Generate a sample meal plan for a specific culture"""
+    culture_map = {
+        'asian': 'Asian',
+        'hispanic': 'Hispanic', 
+        'african': 'African',
+        'middle-eastern': 'Middle Eastern',
+        'caucasian': 'Caucasian'
+    }
+    
+    race = culture_map.get(culture.lower())
+    if not race:
+        return "Culture not found", 404
+    
+    # Generate a 30-day meal plan for the specific culture
+    meal_plan = generate_meal_plan(30, ingredients=None, dietary_prefs=None, race=race)
+    
+    # Calculate shopping list
+    shopping_list = calculate_missing_ingredients(meal_plan, [])
+    
+    # Store in session for PDF export
+    session['current_meal_plan'] = meal_plan
+    session['current_shopping_list'] = shopping_list
+    session['plan_metadata'] = {
+        'days': 30,
+        'ingredients': [],
+        'dietary_prefs': [],
+        'race': race,
+        'generated_at': datetime.now().isoformat(),
+        'sample_plan': True,
+        'culture': culture.title()
+    }
+    
+    return render_template('meal_plan.html', 
+                         meal_plan=meal_plan, 
+                         shopping_list=shopping_list,
+                         metadata=session['plan_metadata'],
+                         is_sample=True)
+
 @app.route('/import_json', methods=['POST'])
 def import_json():
     """Import meal plan from JSON file"""

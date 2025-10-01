@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Your Meal Plan{% endblock %}
+{% block title %}{% if is_sample %}Sample {% endif %}Your Meal Plan{% endblock %}
 
-{% block header_title %}<i class="fas fa-sparkles me-2"></i>Your Meal Plan{% endblock %}
-{% block header_subtitle %}Delicious recipes tailored for you{% endblock %}
+{% block header_title %}{% if is_sample %}Sample {% endif %}Your Meal Plan{% endblock %}
+{% block header_subtitle %}{% if is_sample %}{{ metadata.culture }} Cultural Journey - {% endif %}Delicious meals planned just for you{% endblock %}
 
 {% block content %}
 <div class="d-flex gap-2 mb-3 flex-wrap">

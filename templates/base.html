@@ -342,9 +342,9 @@
             <i class="fas fa-home"></i>
             <span>Home</span>
         </a>
-        <a href="#" onclick="window.history.back(); return false;" class="">
-            <i class="fas fa-clock-rotate-left"></i>
-            <span>History</span>
+        <a href="{{ url_for('samples') }}" class="{% if request.endpoint == 'samples' %}active{% endif %}">
+            <i class="fas fa-star"></i>
+            <span>Samples</span>
         </a>
         <a href="#" onclick="scrollToTop(); return false;" class="">
             <i class="fas fa-arrow-up"></i>
