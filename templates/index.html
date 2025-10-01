@@ -2,162 +2,145 @@
 
 {% block title %}Home - Meal Planner{% endblock %}
 
+{% block header_title %}Meal Planner{% endblock %}
+{% block header_subtitle %}Plan delicious meals from around the world{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-lg-8 mx-auto">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h2 class="card-title mb-0">
-                    <i class="fas fa-magic me-2"></i>Generate Your Meal Plan
-                </h2>
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title mb-0">
+            <i class="fas fa-wand-magic-sparkles me-2"></i>Create Your Meal Plan
+        </h2>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('generate_plan') }}" id="mealPlanForm">
+            <div class="mb-4">
+                <label for="ingredients" class="form-label fw-bold">
+                    <i class="fas fa-refrigerator me-2" style="color: #6C63FF;"></i>Fridge Ingredients
+                </label>
+                <textarea 
+                    class="form-control" 
+                    id="ingredients" 
+                    name="ingredients" 
+                    rows="3" 
+                    placeholder="chicken, rice, tomatoes, onions..."
+                ></textarea>
+                <div class="form-text">
+                    <i class="fas fa-lightbulb me-1"></i>
+                    Leave empty to explore all recipes
+                </div>
             </div>
-            <div class="card-body">
-                <p class="text-muted mb-4">
-                    Create personalized meal plans based on your fridge ingredients, dietary preferences, and cultural background.
-                    Our system includes recipes from Asian, African, Hispanic, Caucasian, and Middle Eastern cuisines.
-                </p>
 
-                <form method="POST" action="{{ url_for('generate_plan') }}" id="mealPlanForm">
-                    <!-- Fridge Ingredients -->
-                    <div class="mb-4">
-                        <label for="ingredients" class="form-label">
-                            <i class="fas fa-list me-2"></i>Fridge Ingredients
+            <div class="mb-4">
+                <label for="days" class="form-label fw-bold">
+                    <i class="fas fa-calendar-days me-2" style="color: #FF6B9D;"></i>Plan Duration
+                </label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="days" name="days" 
+                           min="1" max="30" value="7" required>
+                    <span class="input-group-text" style="background: var(--primary-gradient); color: white; border: none;">days</span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-leaf me-2" style="color: #4facfe;"></i>Dietary Preferences
+                </label>
+                <div class="d-flex gap-2 flex-wrap">
+                    <div class="form-check" style="flex: 1; min-width: 150px;">
+                        <input class="form-check-input" type="checkbox" id="vegan" name="dietary_prefs" value="vegan" style="border-color: #4facfe;">
+                        <label class="form-check-label" for="vegan">
+                            <span class="badge" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <i class="fas fa-seedling me-1"></i>Vegan
+                            </span>
                         </label>
-                        <textarea 
-                            class="form-control" 
-                            id="ingredients" 
-                            name="ingredients" 
-                            rows="3" 
-                            placeholder="Enter ingredients separated by commas (e.g., chicken, rice, tomatoes, onions). Leave empty to generate meal plans without ingredient filtering."
-                        ></textarea>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Optional: If left empty, we'll generate a complete meal plan without ingredient filtering.
-                        </div>
                     </div>
-
-                    <!-- Plan Duration -->
-                    <div class="mb-4">
-                        <label for="days" class="form-label">
-                            <i class="fas fa-calendar me-2"></i>Plan Duration
+                    <div class="form-check" style="flex: 1; min-width: 150px;">
+                        <input class="form-check-input" type="checkbox" id="vegetarian" name="dietary_prefs" value="vegetarian" style="border-color: #fa709a;">
+                        <label class="form-check-label" for="vegetarian">
+                            <span class="badge" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                                <i class="fas fa-carrot me-1"></i>Vegetarian
+                            </span>
                         </label>
-                        <div class="input-group">
-                            <input type="number" class="form-control" id="days" name="days" 
-                                   min="1" max="30" value="7" required>
-                            <span class="input-group-text">days</span>
-                        </div>
-                        <div class="form-text">Choose between 1-30 days</div>
                     </div>
-
-                    <!-- Dietary Preferences -->
-                    <div class="mb-4">
-                        <label class="form-label">
-                            <i class="fas fa-leaf me-2"></i>Dietary Preferences
+                    <div class="form-check" style="flex: 1; min-width: 150px;">
+                        <input class="form-check-input" type="checkbox" id="gluten-free" name="dietary_prefs" value="gluten-free" style="border-color: #667eea;">
+                        <label class="form-check-label" for="gluten-free">
+                            <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <i class="fas fa-wheat-awn-circle-exclamation me-1"></i>Gluten-Free
+                            </span>
                         </label>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="vegan" name="dietary_prefs" value="vegan">
-                                    <label class="form-check-label" for="vegan">
-                                        <i class="fas fa-seedling me-1 text-success"></i>Vegan
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="vegetarian" name="dietary_prefs" value="vegetarian">
-                                    <label class="form-check-label" for="vegetarian">
-                                        <i class="fas fa-carrot me-1 text-warning"></i>Vegetarian
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="gluten-free" name="dietary_prefs" value="gluten-free">
-                                    <label class="form-check-label" for="gluten-free">
-                                        <i class="fas fa-wheat me-1 text-info"></i>Gluten-Free
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Cultural Preference -->
-                    <div class="mb-4">
-                        <label for="race" class="form-label">
-                            <i class="fas fa-globe me-2"></i>Cultural Cuisine Preference
-                        </label>
-                        <select class="form-select" id="race" name="race">
-                            <option value="">Select a cuisine preference</option>
-                            <option value="Asian">
-                                <i class="fas fa-yin-yang me-1"></i>Asian Cuisine
-                            </option>
-                            <option value="African">African Cuisine</option>
-                            <option value="Hispanic">Hispanic Cuisine</option>
-                            <option value="Caucasian">Caucasian Cuisine</option>
-                            <option value="Middle Eastern">Middle Eastern Cuisine</option>
-                        </select>
-                    </div>
-
-                    <!-- Submit Button -->
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-magic me-2"></i>Generate Meal Plan
-                        </button>
-                    </div>
-                </form>
-
-                <!-- Import Section -->
-                <hr class="my-4">
-                <div class="row">
-                    <div class="col-md-12">
-                        <h5 class="mb-3">
-                            <i class="fas fa-upload me-2"></i>Import Existing Meal Plan
-                        </h5>
-                        <form method="POST" action="{{ url_for('import_json') }}" enctype="multipart/form-data" class="d-flex gap-2">
-                            <input type="file" class="form-control" name="json_file" accept=".json" required>
-                            <button type="submit" class="btn btn-outline-secondary">
-                                <i class="fas fa-upload me-1"></i>Import
-                            </button>
-                        </form>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Upload a previously exported meal plan JSON file.
-                        </div>
                     </div>
                 </div>
             </div>
+
+            <div class="mb-4">
+                <label for="race" class="form-label fw-bold">
+                    <i class="fas fa-earth-americas me-2" style="color: #FEC163;"></i>Cultural Cuisine
+                </label>
+                <select class="form-select" id="race" name="race">
+                    <option value="">🌍 All Cuisines</option>
+                    <option value="Asian">🥢 Asian Cuisine</option>
+                    <option value="African">🌍 African Cuisine</option>
+                    <option value="Hispanic">🌶️ Hispanic Cuisine</option>
+                    <option value="Caucasian">🍝 Caucasian Cuisine</option>
+                    <option value="Middle Eastern">🧆 Middle Eastern Cuisine</option>
+                </select>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-wand-magic-sparkles me-2"></i>Generate Meal Plan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="mb-3 gradient-text">
+            <i class="fas fa-file-import me-2"></i>Import Meal Plan
+        </h5>
+        <form method="POST" action="{{ url_for('import_json') }}" enctype="multipart/form-data" class="d-flex gap-2">
+            <input type="file" class="form-control" name="json_file" accept=".json" required>
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="fas fa-upload me-1"></i>Import
+            </button>
+        </form>
+        <div class="form-text mt-2">
+            <i class="fas fa-circle-info me-1"></i>
+            Upload a previously exported meal plan
         </div>
+    </div>
+</div>
 
-        <!-- Features Section -->
-        <div class="row mt-5">
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="fas fa-utensils fa-3x text-primary mb-3"></i>
-                        <h5>Diverse Cuisines</h5>
-                        <p class="text-muted">Recipes from Asian, African, Hispanic, Caucasian, and Middle Eastern cuisines.</p>
-                    </div>
-                </div>
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="meal-card text-center">
+            <div style="background: var(--primary-gradient); width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                <i class="fas fa-utensils fa-2x" style="color: white;"></i>
             </div>
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="fas fa-shopping-cart fa-3x text-success mb-3"></i>
-                        <h5>Smart Shopping Lists</h5>
-                        <p class="text-muted">Automatically generated categorized shopping lists for missing ingredients.</p>
-                    </div>
-                </div>
+            <h5 class="gradient-text">Diverse Cuisines</h5>
+            <p class="text-muted small">Recipes from 5 cultural traditions</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="meal-card text-center">
+            <div style="background: var(--success-gradient); width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                <i class="fas fa-cart-shopping fa-2x" style="color: white;"></i>
             </div>
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="fas fa-file-pdf fa-3x text-danger mb-3"></i>
-                        <h5>Export Options</h5>
-                        <p class="text-muted">Export meal plans as PDF or JSON for easy sharing and backup.</p>
-                    </div>
-                </div>
+            <h5 class="gradient-text">Smart Shopping</h5>
+            <p class="text-muted small">Auto-generated ingredient lists</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="meal-card text-center">
+            <div style="background: var(--warning-gradient); width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                <i class="fas fa-download fa-2x" style="color: white;"></i>
             </div>
+            <h5 class="gradient-text">Export Plans</h5>
+            <p class="text-muted small">PDF & JSON downloads</p>
         </div>
     </div>
 </div>
@@ -167,8 +150,10 @@
 <script>
     document.getElementById('mealPlanForm').addEventListener('submit', function(e) {
         const submitBtn = this.querySelector('button[type="submit"]');
+        const overlay = document.getElementById('loadingOverlay');
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
         submitBtn.disabled = true;
+        overlay.classList.add('show');
     });
 </script>
 {% endblock %}

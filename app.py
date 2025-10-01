@@ -18,9 +18,19 @@ import io
 import os
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SESSION_SECRET', 'your-secret-key-here')
+app.secret_key = os.environ.get('SESSION_SECRET')
 
 DATABASE = 'data/data/meal_planner.db'
+
+@app.route('/service-worker.js')
+def service_worker():
+    """Serve the service worker"""
+    return send_file('static/service-worker.js', mimetype='application/javascript')
+
+@app.route('/favicon.ico')
+def favicon():
+    """Serve the favicon"""
+    return send_file('static/icons/favicon-32.png', mimetype='image/png')
 
 def get_db_connection():
     """Create a database connection"""

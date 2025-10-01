@@ -1,177 +1,154 @@
 {% extends "base.html" %}
 
-{% block title %}Meal Plan - Meal Planner{% endblock %}
+{% block title %}Your Meal Plan{% endblock %}
+
+{% block header_title %}<i class="fas fa-sparkles me-2"></i>Your Meal Plan{% endblock %}
+{% block header_subtitle %}Delicious recipes tailored for you{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>
-        <i class="fas fa-calendar-alt me-2"></i>Your Meal Plan
-    </h1>
-    <div class="btn-group">
-        <a href="{{ url_for('export_pdf') }}" class="btn btn-danger">
-            <i class="fas fa-file-pdf me-1"></i>Export PDF
-        </a>
-        <a href="{{ url_for('export_json') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-download me-1"></i>Export JSON
-        </a>
-        <a href="{{ url_for('index') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i>New Plan
-        </a>
-    </div>
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a href="{{ url_for('export_pdf') }}" class="btn btn-danger flex-fill">
+        <i class="fas fa-file-pdf me-1"></i>PDF
+    </a>
+    <a href="{{ url_for('export_json') }}" class="btn btn-success flex-fill">
+        <i class="fas fa-download me-1"></i>JSON
+    </a>
+    <a href="{{ url_for('index') }}" class="btn btn-primary flex-fill">
+        <i class="fas fa-plus me-1"></i>New
+    </a>
 </div>
 
 {% if metadata %}
-<div class="card mb-4">
+<div class="card mb-3">
     <div class="card-body">
-        <h5 class="card-title">
-            <i class="fas fa-info-circle me-2"></i>Plan Details
-        </h5>
-        <div class="row">
-            <div class="col-md-3">
-                <strong>Duration:</strong> {{ metadata.days }} days
-            </div>
-            <div class="col-md-3">
-                <strong>Cultural Preference:</strong> {{ metadata.race or 'Any' }}
-            </div>
-            <div class="col-md-6">
-                <strong>Dietary Preferences:</strong> 
-                {% if metadata.dietary_prefs %}
-                    {{ metadata.dietary_prefs | join(', ') }}
-                {% else %}
-                    None specified
-                {% endif %}
-            </div>
+        <h6 class="gradient-text mb-3"><i class="fas fa-circle-info me-2"></i>Plan Details</h6>
+        <div class="d-flex flex-wrap gap-2 mb-2">
+            <span class="badge" style="background: var(--primary-gradient);">
+                <i class="fas fa-calendar me-1"></i>{{ metadata.days }} days
+            </span>
+            {% if metadata.race %}
+            <span class="badge" style="background: var(--secondary-gradient);">
+                <i class="fas fa-earth-americas me-1"></i>{{ metadata.race }}
+            </span>
+            {% endif %}
+            {% for pref in metadata.dietary_prefs %}
+            <span class="badge" style="background: var(--success-gradient);">
+                <i class="fas fa-leaf me-1"></i>{{ pref }}
+            </span>
+            {% endfor %}
         </div>
         {% if metadata.ingredients %}
-        <div class="mt-2">
-            <strong>Available Ingredients:</strong> {{ metadata.ingredients | join(', ') }}
-        </div>
+        <p class="text-muted small mb-0">
+            <i class="fas fa-refrigerator me-1"></i>{{ metadata.ingredients | join(', ') }}
+        </p>
         {% endif %}
     </div>
 </div>
 {% endif %}
 
-<!-- Meal Plan -->
-<div class="row">
-    <div class="col-lg-8">
-        <h2 class="mb-3">
-            <i class="fas fa-utensils me-2"></i>Meals
-        </h2>
-        
-        {% for day, meals in meal_plan.items() %}
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">{{ day }}</h4>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    {% for meal_type, recipe in meals.items() %}
-                    {% if recipe %}
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card meal-card h-100 border-0 bg-light">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-2 text-primary text-uppercase">
-                                    <i class="fas fa-{{ 'coffee' if meal_type == 'breakfast' else 'hamburger' if meal_type == 'lunch' else 'pizza-slice' if meal_type == 'dinner' else 'cookie-bite' if meal_type == 'dessert' else 'wine-glass' if meal_type == 'drink' else 'star' }} me-1"></i>
-                                    {{ meal_type }}
-                                </h6>
-                                <h6 class="card-title">
-                                    <a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}" class="recipe-link">
-                                        {{ recipe.title }}
-                                    </a>
-                                </h6>
-                                <div class="nutrition-info">
-                                    <small>
-                                        <i class="fas fa-fire me-1"></i>{{ recipe.calories }} cal |
-                                        <i class="fas fa-drumstick-bite me-1"></i>{{ recipe.protein }}g protein |
-                                        <i class="fas fa-bread-slice me-1"></i>{{ recipe.carbs }}g carbs |
-                                        <i class="fas fa-tint me-1"></i>{{ recipe.fat }}g fat
-                                    </small>
-                                </div>
+{% for day, meals in meal_plan.items() %}
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-calendar-day me-2"></i>{{ day }}</h5>
+    </div>
+    <div class="card-body p-2">
+        <div class="row g-2">
+            {% for meal_type, recipe in meals.items() %}
+            {% if recipe %}
+            <div class="col-6">
+                <a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}" class="recipe-link">
+                    <div class="meal-card">
+                        <div class="d-flex align-items-center mb-2">
+                            <div style="background: {% if meal_type == 'breakfast' %}var(--warning-gradient){% elif meal_type == 'lunch' %}var(--success-gradient){% elif meal_type == 'dinner' %}var(--primary-gradient){% elif meal_type == 'dessert' %}var(--secondary-gradient){% elif meal_type == 'drink' %}var(--info-gradient){% else %}var(--primary-gradient){% endif %}; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem;">
+                                <i class="fas fa-{{ 'mug-saucer' if meal_type == 'breakfast' else 'bowl-food' if meal_type == 'lunch' else 'plate-wheat' if meal_type == 'dinner' else 'ice-cream' if meal_type == 'dessert' else 'martini-glass' if meal_type == 'drink' else 'cookie' }} fa-lg" style="color: white;"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div class="text-uppercase fw-bold" style="font-size: 0.7rem; color: #94A3B8;">{{ meal_type }}</div>
+                                <div class="fw-bold" style="font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ recipe.title }}</div>
                             </div>
                         </div>
-                    </div>
-                    {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Shopping List Sidebar -->
-    <div class="col-lg-4">
-        <div class="card shadow-sm sticky-top" style="top: 20px;">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0">
-                    <i class="fas fa-shopping-cart me-2"></i>Shopping List
-                </h4>
-            </div>
-            <div class="card-body">
-                {% if shopping_list %}
-                    {% for category, ingredients in shopping_list.items() %}
-                    {% if ingredients %}
-                    <div class="shopping-category">
-                        <h6 class="text-primary text-uppercase fw-bold mb-2">
-                            <i class="fas fa-{{ 'drumstick-bite' if category == 'protein' else 'carrot' if category == 'vegetable' else 'bread-slice' if category == 'grain' else 'cheese' if category == 'dairy' else 'pepper-hot' if category == 'spice' else 'apple-alt' if category == 'fruit' else 'seedling' if category == 'nuts' else 'tag' }} me-1"></i>
-                            {{ category.title() }}
-                        </h6>
-                        {% for ingredient in ingredients %}
-                        <div class="ingredient-item">
-                            <i class="fas fa-check-square text-muted me-2"></i>{{ ingredient }}
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="nutrition-badge" style="font-size: 0.7rem;">
+                                <i class="fas fa-fire me-1"></i>{{ recipe.calories }}
+                            </span>
+                            <span class="nutrition-badge" style="font-size: 0.7rem;">
+                                <i class="fas fa-dumbbell me-1"></i>{{ recipe.protein }}g
+                            </span>
                         </div>
-                        {% endfor %}
                     </div>
-                    {% endif %}
-                    {% endfor %}
-                {% else %}
-                <div class="text-center text-muted">
-                    <i class="fas fa-check-circle fa-3x mb-3"></i>
-                    <p>You have all the ingredients needed!</p>
-                </div>
-                {% endif %}
+                </a>
             </div>
+            {% endif %}
+            {% endfor %}
         </div>
     </div>
 </div>
+{% endfor %}
 
-<!-- Daily Nutrition Summary -->
-<div class="card mt-4">
-    <div class="card-header bg-info text-white">
-        <h4 class="mb-0">
-            <i class="fas fa-chart-pie me-2"></i>Daily Nutrition Overview
-        </h4>
+{% if shopping_list %}
+<div class="card mb-3">
+    <div class="card-header" style="background: var(--success-gradient);">
+        <h5 class="mb-0" style="color: white;">
+            <i class="fas fa-cart-shopping me-2"></i>Shopping List
+        </h5>
     </div>
     <div class="card-body">
+        {% for category, ingredients in shopping_list.items() %}
+        {% if ingredients %}
+        <div class="shopping-category">
+            <h6 class="gradient-text mb-2">
+                <i class="fas fa-{{ 'drumstick-bite' if category == 'protein' else 'carrot' if category == 'vegetable' else 'bread-slice' if category == 'grain' else 'cheese' if category == 'dairy' else 'pepper-hot' if category == 'spice' else 'apple-whole' if category == 'fruit' else 'seedling' }} me-1"></i>
+                {{ category.title() }}
+            </h6>
+            {% for ingredient in ingredients %}
+            <div class="ingredient-item">
+                <i class="fas fa-circle-check me-2" style="color: #6C63FF;"></i>{{ ingredient }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="card mb-3">
+    <div class="card-header" style="background: var(--info-gradient);">
+        <h5 class="mb-0" style="color: white;">
+            <i class="fas fa-chart-pie me-2"></i>Daily Nutrition
+        </h5>
+    </div>
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-sm mb-0">
                 <thead>
                     <tr>
-                        <th>Day</th>
-                        <th>Total Calories</th>
-                        <th>Total Protein</th>
-                        <th>Total Carbs</th>
-                        <th>Total Fat</th>
+                        <th style="padding: 0.75rem;">Day</th>
+                        <th style="padding: 0.75rem;">Cal</th>
+                        <th style="padding: 0.75rem;">Protein</th>
+                        <th style="padding: 0.75rem;">Carbs</th>
+                        <th style="padding: 0.75rem;">Fat</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for day, meals in meal_plan.items() %}
                     <tr>
-                        <td><strong>{{ day }}</strong></td>
-                        <td>
+                        <td style="padding: 0.75rem;"><strong>{{ day }}</strong></td>
+                        <td style="padding: 0.75rem;">
                             {% set total_calories = meals.values() | selectattr('calories') | map(attribute='calories') | sum %}
-                            {{ total_calories }} cal
+                            {{ total_calories }}
                         </td>
-                        <td>
+                        <td style="padding: 0.75rem;">
                             {% set total_protein = meals.values() | selectattr('protein') | map(attribute='protein') | sum %}
-                            {{ "%.1f" | format(total_protein) }}g
+                            {{ "%.0f" | format(total_protein) }}g
                         </td>
-                        <td>
+                        <td style="padding: 0.75rem;">
                             {% set total_carbs = meals.values() | selectattr('carbs') | map(attribute='carbs') | sum %}
-                            {{ "%.1f" | format(total_carbs) }}g
+                            {{ "%.0f" | format(total_carbs) }}g
                         </td>
-                        <td>
+                        <td style="padding: 0.75rem;">
                             {% set total_fat = meals.values() | selectattr('fat') | map(attribute='fat') | sum %}
-                            {{ "%.1f" | format(total_fat) }}g
+                            {{ "%.0f" | format(total_fat) }}g
                         </td>
                     </tr>
                     {% endfor %}
