@@ -24,7 +24,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "uv run gunicorn --bind 0.0.0.0:5000 --reuse-port --reload --timeout 120 main:app"
+args = "uv run gunicorn --bind 0.0.0.0:5000 --workers 1 --threads 2 --reuse-port --timeout 120 --log-level warning main:app"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -34,10 +34,6 @@ outputType = "webview"
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 32861
-externalPort = 3000
-
 [deployment]
 deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
+run = ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "2", "--log-level", "warning", "main:app"]

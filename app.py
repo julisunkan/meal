@@ -374,50 +374,95 @@ def rate_recipe(recipe_id):
         print(f"Error rating recipe: {e}")
         return jsonify({'success': False, 'message': 'Error saving rating'})
 
+# OPTIMIZATION: Pre-create reusable PDF styles (defined once, not per request)
+_pdf_styles = None
+_pdf_table_style = None
+
+def get_pdf_styles():
+    """Get cached PDF styles (created once and reused)"""
+    global _pdf_styles, _pdf_table_style
+    if _pdf_styles is None:
+        base_styles = getSampleStyleSheet()
+        _pdf_styles = {
+            'title': ParagraphStyle(
+                'CustomTitle',
+                parent=base_styles['Heading1'],
+                fontSize=20,
+                spaceAfter=30,
+                alignment=1
+            ),
+            'day_header': ParagraphStyle(
+                'DayHeader',
+                parent=base_styles['Heading2'],
+                fontSize=16,
+                spaceAfter=10
+            ),
+            'normal': base_styles['Normal'],
+            'heading2': base_styles['Heading2']
+        }
+        _pdf_table_style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ])
+    return _pdf_styles, _pdf_table_style
+
 @app.route('/export_pdf')
 def export_pdf():
-    """Generate and download PDF of current meal plan"""
+    """Generate and download PDF of current meal plan (optimized with caching)"""
     if 'current_meal_plan' not in session:
         return "No meal plan to export", 400
     
     try:
-        # Create PDF in memory
+        # OPTIMIZATION: Check if we have a cached PDF for this exact meal plan
+        meal_plan = session['current_meal_plan']
+        metadata = session.get('plan_metadata', {})
+        
+        # Create a hash of the meal plan for caching
+        plan_hash = hashlib.md5(json.dumps(meal_plan, sort_keys=True).encode()).hexdigest()
+        cached_pdf_key = f'cached_pdf_{plan_hash}'
+        
+        if cached_pdf_key in session:
+            # Return cached PDF
+            pdf_bytes = session[cached_pdf_key]
+            response = app.response_class(
+                pdf_bytes,
+                status=200,
+                mimetype='application/pdf'
+            )
+            response.headers['Content-Disposition'] = f'attachment; filename="meal_plan_{datetime.now().strftime("%Y%m%d")}.pdf"'
+            response.headers['Content-Length'] = len(pdf_bytes)
+            response.headers['Cache-Control'] = 'no-cache'
+            return response
+        
+        # Generate PDF (not cached)
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter)
-        styles = getSampleStyleSheet()
         story = []
         
+        # Get reusable styles
+        styles, table_style = get_pdf_styles()
+        
         # Title
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=20,
-            spaceAfter=30,
-            alignment=1  # Center alignment
-        )
-        story.append(Paragraph("Meal Plan", title_style))
+        story.append(Paragraph("Meal Plan", styles['title']))
         story.append(Spacer(1, 20))
         
         # Metadata
-        metadata = session.get('plan_metadata', {})
-        info_style = styles['Normal']
-        story.append(Paragraph(f"<b>Duration:</b> {metadata.get('days', 'N/A')} days", info_style))
-        story.append(Paragraph(f"<b>Dietary Preferences:</b> {', '.join(metadata.get('dietary_prefs', []))}", info_style))
-        story.append(Paragraph(f"<b>Cultural Preference:</b> {metadata.get('race', 'N/A')}", info_style))
-        story.append(Paragraph(f"<b>Generated:</b> {metadata.get('generated_at', 'N/A')}", info_style))
+        story.append(Paragraph(f"<b>Duration:</b> {metadata.get('days', 'N/A')} days", styles['normal']))
+        story.append(Paragraph(f"<b>Dietary Preferences:</b> {', '.join(metadata.get('dietary_prefs', []))}", styles['normal']))
+        story.append(Paragraph(f"<b>Cultural Preference:</b> {metadata.get('race', 'N/A')}", styles['normal']))
+        story.append(Paragraph(f"<b>Generated:</b> {metadata.get('generated_at', 'N/A')}", styles['normal']))
         story.append(Spacer(1, 20))
         
         # Meal plan
-        meal_plan = session['current_meal_plan']
         for day, meals in meal_plan.items():
-            # Day header
-            day_style = ParagraphStyle(
-                'DayHeader',
-                parent=styles['Heading2'],
-                fontSize=16,
-                spaceAfter=10
-            )
-            story.append(Paragraph(day, day_style))
+            story.append(Paragraph(day, styles['day_header']))
             
             # Meals table
             meal_data = [['Meal Type', 'Recipe', 'Calories', 'Protein', 'Carbs', 'Fat']]
@@ -433,48 +478,39 @@ def export_pdf():
                     ])
             
             table = Table(meal_data, colWidths=[1*inch, 2.5*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.8*inch])
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                ('FONTSIZE', (0, 1), (-1, -1), 8),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black)
-            ]))
+            table.setStyle(table_style)
             story.append(table)
             story.append(Spacer(1, 20))
         
         # Shopping list
         shopping_list = session.get('current_shopping_list', {})
         if shopping_list:
-            story.append(Paragraph("Shopping List", styles['Heading2']))
+            story.append(Paragraph("Shopping List", styles['heading2']))
             story.append(Spacer(1, 10))
             
             for category, ingredients in shopping_list.items():
                 if ingredients:
-                    story.append(Paragraph(f"<b>{category.title()}:</b>", styles['Normal']))
+                    story.append(Paragraph(f"<b>{category.title()}:</b>", styles['normal']))
                     for ingredient in ingredients:
-                        story.append(Paragraph(f"• {ingredient}", styles['Normal']))
+                        story.append(Paragraph(f"• {ingredient}", styles['normal']))
                     story.append(Spacer(1, 10))
         
         # Build PDF
         doc.build(story)
         buffer.seek(0)
+        pdf_bytes = buffer.getvalue()
         
-        # Reset buffer position
-        buffer.seek(0)
+        # Cache the PDF in session (for repeated downloads)
+        session[cached_pdf_key] = pdf_bytes
         
         # Create response with proper headers for server-side download
         response = app.response_class(
-            buffer.getvalue(),
+            pdf_bytes,
             status=200,
             mimetype='application/pdf'
         )
         response.headers['Content-Disposition'] = f'attachment; filename="meal_plan_{datetime.now().strftime("%Y%m%d")}.pdf"'
-        response.headers['Content-Length'] = len(buffer.getvalue())
+        response.headers['Content-Length'] = len(pdf_bytes)
         response.headers['Cache-Control'] = 'no-cache'
         
         return response
