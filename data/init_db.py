@@ -232,7 +232,87 @@ def populate_recipes(conn):
         # More desserts
         (37, "Mochi Ice Cream", "dessert", "Wrap ice cream in sweet rice dough.", 160, 3, 28, 6),
         (38, "Flan", "dessert", "Caramel custard dessert.", 240, 6, 35, 9),
-        (39, "Tiramisu", "dessert", "Coffee-soaked ladyfingers with mascarpone.", 300, 8, 32, 18)
+        (39, "Tiramisu", "dessert", "Coffee-soaked ladyfingers with mascarpone.", 300, 8, 32, 18),
+        
+        # Additional Asian recipes
+        (40, "Ramen Noodle Soup", "lunch", "Cook ramen noodles in rich broth with vegetables and egg.", 420, 18, 52, 14),
+        (41, "Korean Bibimbap", "dinner", "Serve rice with seasoned vegetables, meat, and fried egg.", 480, 22, 68, 16),
+        (42, "Pad Thai", "lunch", "Stir-fry rice noodles with shrimp, tofu, and tamarind sauce.", 390, 16, 58, 12),
+        (43, "Japanese Pancakes", "breakfast", "Fluffy pancakes served with syrup and butter.", 320, 8, 45, 12),
+        (44, "Thai Tom Yum Soup", "appetizer", "Spicy and sour soup with lemongrass and lime leaves.", 85, 6, 12, 2),
+        (45, "Matcha Latte", "drink", "Whisk matcha powder with steamed milk and sweetener.", 120, 4, 18, 4),
+        (46, "Vietnamese Spring Rolls", "appetizer", "Fresh rolls with vegetables, herbs, and dipping sauce.", 140, 5, 25, 3),
+        (47, "Chinese Congee", "breakfast", "Rice porridge cooked until creamy, topped with ginger.", 180, 6, 35, 2),
+        (48, "Thai Mango Salad", "lunch", "Shredded green mango with lime, chili, and peanuts.", 160, 4, 28, 6),
+        (49, "Korean Kimchi", "appetizer", "Fermented cabbage with garlic, ginger, and chili.", 25, 2, 5, 0),
+        
+        # Additional African recipes
+        (50, "Moroccan Tagine", "dinner", "Slow-cooked stew with meat, vegetables, and preserved lemons.", 350, 28, 25, 18),
+        (51, "Ethiopian Injera", "breakfast", "Spongy flatbread made from teff flour.", 220, 8, 42, 2),
+        (52, "West African Fufu", "dinner", "Pounded yam or cassava served with soup.", 280, 4, 68, 1),
+        (53, "South African Bobotie", "lunch", "Spiced meat casserole topped with egg custard.", 410, 25, 15, 28),
+        (54, "Moroccan Mint Tea", "drink", "Green tea brewed with fresh mint and sugar.", 35, 0, 9, 0),
+        (55, "Nigerian Suya", "appetizer", "Grilled spiced meat skewers.", 250, 20, 5, 16),
+        (56, "Ethiopian Doro Wat", "dinner", "Spicy chicken stew with berbere spice blend.", 380, 32, 18, 22),
+        (57, "African Peanut Soup", "lunch", "Creamy soup with peanuts, vegetables, and meat.", 320, 14, 22, 20),
+        (58, "Malva Pudding", "dessert", "Sweet sponge cake with apricot jam and custard.", 290, 5, 48, 12),
+        (59, "Biltong", "appetizer", "Dried and seasoned meat strips.", 180, 30, 2, 6),
+        
+        # Additional Hispanic recipes
+        (60, "Paella Valenciana", "dinner", "Spanish rice dish with saffron, chicken, and seafood.", 450, 35, 45, 18),
+        (61, "Churros", "dessert", "Fried dough pastry dusted with cinnamon sugar.", 280, 4, 35, 15),
+        (62, "Ceviche", "lunch", "Raw fish marinated in citrus juice with onions and peppers.", 180, 25, 8, 2),
+        (63, "Empanadas", "appetizer", "Baked pastries filled with meat, cheese, or vegetables.", 220, 10, 25, 12),
+        (64, "Mexican Hot Chocolate", "drink", "Rich chocolate drink with cinnamon and chili.", 200, 6, 32, 8),
+        (65, "Arroz con Leche", "dessert", "Creamy rice pudding with cinnamon and vanilla.", 240, 6, 45, 6),
+        (66, "Mole Poblano", "dinner", "Complex sauce with chocolate and chili over chicken.", 480, 38, 25, 28),
+        (67, "Gazpacho", "appetizer", "Cold soup made with tomatoes, peppers, and cucumbers.", 90, 3, 18, 2),
+        (68, "Frijoles Refritos", "lunch", "Refried beans with onions and spices.", 180, 12, 28, 4),
+        (69, "Dulce de Leche", "dessert", "Sweet caramel sauce made from milk and sugar.", 320, 8, 52, 12),
+        
+        # Additional Caucasian recipes
+        (70, "Beef Wellington", "dinner", "Beef tenderloin wrapped in pastry with mushroom duxelles.", 580, 42, 35, 32),
+        (71, "French Croissant", "breakfast", "Buttery, flaky pastry perfect for breakfast.", 350, 8, 32, 22),
+        (72, "Italian Minestrone", "lunch", "Hearty vegetable soup with pasta and beans.", 220, 10, 35, 6),
+        (73, "German Sauerbraten", "dinner", "Marinated pot roast with sweet and sour sauce.", 420, 38, 18, 22),
+        (74, "French Onion Soup", "appetizer", "Rich soup with caramelized onions and cheese.", 280, 12, 25, 16),
+        (75, "Espresso", "drink", "Strong Italian coffee served in small portions.", 5, 0, 1, 0),
+        (76, "British Shepherd's Pie", "dinner", "Ground lamb with vegetables topped with mashed potatoes.", 380, 22, 35, 18),
+        (77, "Italian Gelato", "dessert", "Dense, creamy Italian ice cream.", 180, 4, 25, 8),
+        (78, "German Pretzel", "appetizer", "Twisted bread with coarse salt.", 250, 8, 48, 4),
+        (79, "French Ratatouille", "lunch", "Vegetable stew with eggplant, zucchini, and tomatoes.", 140, 5, 25, 4),
+        
+        # Additional Middle Eastern recipes
+        (80, "Turkish Baklava", "dessert", "Layered pastry with nuts and honey syrup.", 320, 6, 35, 18),
+        (81, "Lebanese Fattoush", "lunch", "Salad with mixed greens, vegetables, and crispy pita.", 180, 6, 25, 8),
+        (82, "Persian Kebab", "dinner", "Grilled meat skewers with saffron rice.", 420, 35, 32, 18),
+        (83, "Turkish Coffee", "drink", "Strong coffee brewed in special pot with cardamom.", 12, 0, 2, 0),
+        (84, "Baba Ganoush", "appetizer", "Roasted eggplant dip with tahini and garlic.", 120, 4, 12, 8),
+        (85, "Lebanese Kibbeh", "lunch", "Fried bulgur shells stuffed with spiced meat.", 280, 16, 25, 14),
+        (86, "Middle Eastern Rice Pilaf", "dinner", "Fragrant rice with almonds and raisins.", 320, 8, 58, 8),
+        (87, "Turkish Delight", "dessert", "Gel confection with rose water and nuts.", 180, 2, 42, 2),
+        (88, "Moroccan Couscous", "lunch", "Steamed semolina with vegetables and meat.", 350, 18, 52, 8),
+        (89, "Persian Doogh", "drink", "Yogurt drink with mint and salt.", 85, 4, 12, 2),
+        
+        # More breakfast options
+        (90, "American Pancakes", "breakfast", "Fluffy pancakes with maple syrup and butter.", 380, 8, 52, 16),
+        (91, "English Muffin", "breakfast", "Toasted muffin with butter and jam.", 180, 6, 28, 5),
+        (92, "Spanish Tortilla", "breakfast", "Potato and egg omelet served at room temperature.", 290, 15, 22, 18),
+        (93, "French Crepes", "breakfast", "Thin pancakes with various sweet or savory fillings.", 220, 6, 32, 8),
+        (94, "Mexican Breakfast Burrito", "breakfast", "Tortilla filled with eggs, beans, and salsa.", 420, 20, 38, 22),
+        (95, "Asian Rice Porridge", "breakfast", "Creamy rice with ginger and green onions.", 160, 5, 32, 2),
+        (96, "African Porridge", "breakfast", "Millet or sorghum porridge with milk and honey.", 180, 6, 35, 3),
+        (97, "Middle Eastern Manakish", "breakfast", "Flatbread topped with za'atar and olive oil.", 220, 6, 35, 8),
+        (98, "German Muesli", "breakfast", "Oats with nuts, fruits, and yogurt.", 240, 8, 38, 8),
+        (99, "Italian Cornetto", "breakfast", "Sweet pastry similar to croissant.", 280, 6, 35, 14),
+        
+        # More drinks
+        (100, "Chai Tea Latte", "drink", "Spiced tea with steamed milk.", 150, 4, 25, 5),
+        (101, "Fresh Orange Juice", "drink", "Freshly squeezed orange juice.", 110, 2, 26, 0),
+        (102, "Coconut Water", "drink", "Natural coconut water.", 45, 1, 9, 0),
+        (103, "Smoothie Bowl", "drink", "Thick fruit smoothie topped with granola.", 280, 8, 52, 6),
+        (104, "Lemonade", "drink", "Fresh lemon juice with sugar and water.", 90, 0, 24, 0),
+        (105, "Kombucha", "drink", "Fermented tea with probiotics.", 30, 0, 7, 0)
     ]
     
     try:
