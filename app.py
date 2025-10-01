@@ -549,8 +549,8 @@ def generate_sample(culture):
     if not race:
         return "Culture not found", 404
     
-    # Generate a 30-day meal plan for the specific culture
-    meal_plan = generate_meal_plan(30, ingredients=None, dietary_prefs=None, race=race)
+    # Generate a 7-day meal plan for the specific culture
+    meal_plan = generate_meal_plan(7, ingredients=None, dietary_prefs=None, race=race)
     
     # Calculate shopping list
     shopping_list = calculate_missing_ingredients(meal_plan, [])
@@ -559,7 +559,7 @@ def generate_sample(culture):
     session['current_meal_plan'] = meal_plan
     session['current_shopping_list'] = shopping_list
     session['plan_metadata'] = {
-        'days': 30,
+        'days': 7,
         'ingredients': [],
         'dietary_prefs': [],
         'race': race,
