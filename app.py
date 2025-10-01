@@ -23,6 +23,20 @@ app.secret_key = os.environ.get('SESSION_SECRET')
 
 DATABASE = 'data/data/meal_planner.db'
 
+# Ensure database exists
+def ensure_database_exists():
+    """Create database if it doesn't exist"""
+    import os
+    if not os.path.exists(DATABASE):
+        # Create directories if they don't exist
+        os.makedirs(os.path.dirname(DATABASE), exist_ok=True)
+        # Initialize database
+        from data.init_db import initialize_database
+        initialize_database()
+
+# Initialize database on startup
+ensure_database_exists()
+
 def ensure_database_indexes():
     """Ensure all performance indexes exist on startup (idempotent)"""
     conn = sqlite3.connect(DATABASE)
@@ -334,11 +348,18 @@ def index():
 def generate_plan():
     """Generate meal plan based on user input"""
     try:
+        # Ensure database exists
+        ensure_database_exists()
+        
         # Get form data
         ingredients_input = request.form.get('ingredients', '').strip()
         days = int(request.form.get('days', '7'))
         dietary_prefs = request.form.getlist('dietary_prefs')
         race = request.form.get('race')
+        
+        # Validate days input
+        if days < 1 or days > 30:
+            return render_template('index.html', error="Please enter between 1-30 days.")
         
         # Parse ingredients
         ingredients = None
@@ -347,6 +368,10 @@ def generate_plan():
         
         # Generate meal plan
         meal_plan = generate_meal_plan(days, ingredients, dietary_prefs, race)
+        
+        # Check if meal plan was generated successfully
+        if not meal_plan:
+            return render_template('index.html', error="Could not generate meal plan. Please try different preferences.")
         
         # Calculate shopping list
         shopping_list = calculate_missing_ingredients(meal_plan, ingredients)
@@ -367,8 +392,13 @@ def generate_plan():
                              shopping_list=shopping_list,
                              metadata=session['plan_metadata'])
     
+    except ValueError as e:
+        print(f"Validation error: {e}")
+        return render_template('index.html', error="Invalid input. Please check your entries.")
     except Exception as e:
         print(f"Error generating meal plan: {e}")
+        import traceback
+        traceback.print_exc()
         return render_template('index.html', error="Error generating meal plan. Please try again.")
 
 @app.route('/recipe/<int:recipe_id>')
