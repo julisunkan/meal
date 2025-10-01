@@ -402,12 +402,20 @@ def export_pdf():
         doc.build(story)
         buffer.seek(0)
         
-        return send_file(
-            buffer,
-            as_attachment=True,
-            download_name=f"meal_plan_{datetime.now().strftime('%Y%m%d')}.pdf",
+        # Reset buffer position
+        buffer.seek(0)
+        
+        # Create response with proper headers for server-side download
+        response = app.response_class(
+            buffer.getvalue(),
+            status=200,
             mimetype='application/pdf'
         )
+        response.headers['Content-Disposition'] = f'attachment; filename="meal_plan_{datetime.now().strftime("%Y%m%d")}.pdf"'
+        response.headers['Content-Length'] = len(buffer.getvalue())
+        response.headers['Cache-Control'] = 'no-cache'
+        
+        return response
     
     except Exception as e:
         print(f"Error generating PDF: {e}")
@@ -426,12 +434,19 @@ def export_json():
             'metadata': session.get('plan_metadata', {})
         }
         
+        # Generate JSON content
+        json_content = json.dumps(export_data, indent=2)
+        
+        # Create response with proper headers for server-side download
         response = app.response_class(
-            response=json.dumps(export_data, indent=2),
+            json_content,
             status=200,
             mimetype='application/json'
         )
-        response.headers['Content-Disposition'] = f'attachment; filename=meal_plan_{datetime.now().strftime("%Y%m%d")}.json'
+        response.headers['Content-Disposition'] = f'attachment; filename="meal_plan_{datetime.now().strftime("%Y%m%d")}.json"'
+        response.headers['Content-Length'] = len(json_content.encode('utf-8'))
+        response.headers['Cache-Control'] = 'no-cache'
+        
         return response
     
     except Exception as e:
