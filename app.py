@@ -165,11 +165,19 @@ def generate_meal_plan(days, ingredients=None, dietary_prefs=None, race=None):
     """Generate a meal plan for the specified number of days"""
     meal_types = ['breakfast', 'lunch', 'dinner', 'appetizer', 'dessert', 'drink']
     meal_plan = {}
-    used_recipe_ids = set()
+    
+    # Track used recipes per week to avoid repetition
+    weekly_used_recipes = set()
+    global_used_recipes = set()
+    week_size = 7
     
     for day in range(1, days + 1):
         day_key = f"Day {day}"
         meal_plan[day_key] = {}
+        
+        # Reset weekly tracking every 7 days
+        if (day - 1) % week_size == 0:
+            weekly_used_recipes = set()
         
         for meal_type in meal_types:
             recipes = get_recipes_by_filters(
@@ -180,29 +188,53 @@ def generate_meal_plan(days, ingredients=None, dietary_prefs=None, race=None):
             )
             
             if recipes:
-                available_recipes = [r for r in recipes if r['id'] not in used_recipe_ids]
+                # Shuffle recipes for better randomness
+                random.shuffle(recipes)
+                
+                # First try: avoid recipes used this week
+                available_recipes = [r for r in recipes if r['id'] not in weekly_used_recipes]
                 
                 if available_recipes:
                     selected_recipe = random.choice(available_recipes)
                     meal_plan[day_key][meal_type] = selected_recipe
-                    used_recipe_ids.add(selected_recipe['id'])
-                elif recipes:
-                    selected_recipe = random.choice(recipes)
-                    meal_plan[day_key][meal_type] = selected_recipe
-                    used_recipe_ids.add(selected_recipe['id'])
+                    weekly_used_recipes.add(selected_recipe['id'])
+                    global_used_recipes.add(selected_recipe['id'])
+                    continue
+                
+                # Second try: avoid recipes used globally (if we have enough recipes)
+                if len(recipes) > len(global_used_recipes):
+                    available_recipes = [r for r in recipes if r['id'] not in global_used_recipes]
+                    if available_recipes:
+                        selected_recipe = random.choice(available_recipes)
+                        meal_plan[day_key][meal_type] = selected_recipe
+                        weekly_used_recipes.add(selected_recipe['id'])
+                        global_used_recipes.add(selected_recipe['id'])
+                        continue
+                
+                # Last resort: use any recipe (but still randomized)
+                selected_recipe = random.choice(recipes)
+                meal_plan[day_key][meal_type] = selected_recipe
+                weekly_used_recipes.add(selected_recipe['id'])
+                global_used_recipes.add(selected_recipe['id'])
             else:
+                # Fallback to any recipes of this meal type
                 fallback_recipes = get_recipes_by_filters(meal_type=meal_type)
                 if fallback_recipes:
-                    available_fallback = [r for r in fallback_recipes if r['id'] not in used_recipe_ids]
+                    random.shuffle(fallback_recipes)
+                    
+                    # Apply same logic for fallback recipes
+                    available_fallback = [r for r in fallback_recipes if r['id'] not in weekly_used_recipes]
                     
                     if available_fallback:
                         selected_recipe = random.choice(available_fallback)
                         meal_plan[day_key][meal_type] = selected_recipe
-                        used_recipe_ids.add(selected_recipe['id'])
+                        weekly_used_recipes.add(selected_recipe['id'])
+                        global_used_recipes.add(selected_recipe['id'])
                     elif fallback_recipes:
                         selected_recipe = random.choice(fallback_recipes)
                         meal_plan[day_key][meal_type] = selected_recipe
-                        used_recipe_ids.add(selected_recipe['id'])
+                        weekly_used_recipes.add(selected_recipe['id'])
+                        global_used_recipes.add(selected_recipe['id'])
     
     return meal_plan
 
