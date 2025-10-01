@@ -23,6 +23,37 @@ app.secret_key = os.environ.get('SESSION_SECRET')
 
 DATABASE = 'data/data/meal_planner.db'
 
+def ensure_database_indexes():
+    """Ensure all performance indexes exist on startup (idempotent)"""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    
+    indexes = [
+        "CREATE INDEX IF NOT EXISTS idx_recipes_meal_type ON recipes(meal_type)",
+        "CREATE INDEX IF NOT EXISTS idx_recipe_races_recipe_id ON recipe_races(recipe_id)",
+        "CREATE INDEX IF NOT EXISTS idx_recipe_races_race ON recipe_races(race)",
+        "CREATE INDEX IF NOT EXISTS idx_recipe_dietary_tags_recipe_id ON recipe_dietary_tags(recipe_id)",
+        "CREATE INDEX IF NOT EXISTS idx_recipe_dietary_tags_tag ON recipe_dietary_tags(tag)",
+        "CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe_id ON recipe_ingredients(recipe_id)",
+        "CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_ingredient_id ON recipe_ingredients(ingredient_id)",
+        "CREATE INDEX IF NOT EXISTS idx_ingredients_name ON ingredients(name)",
+        "CREATE INDEX IF NOT EXISTS idx_substitutions_ingredient_id ON substitutions(ingredient_id)",
+        "CREATE INDEX IF NOT EXISTS idx_substitutions_substitute_id ON substitutions(substitute_ingredient_id)",
+        "CREATE INDEX IF NOT EXISTS idx_ratings_recipe_id ON ratings(recipe_id)",
+    ]
+    
+    for index_sql in indexes:
+        try:
+            cursor.execute(index_sql)
+        except Exception as e:
+            print(f"Warning: Could not create index: {e}")
+    
+    conn.commit()
+    conn.close()
+
+# Ensure indexes exist on app startup
+ensure_database_indexes()
+
 @app.route('/service-worker.js')
 def service_worker():
     """Serve the service worker"""
@@ -140,11 +171,9 @@ def get_recipe_ingredients(recipe_id):
             WHERE ri.recipe_id = ?
             ORDER BY i.category, i.name
         """, (recipe_id,)).fetchall()
-        conn.close()
         return [dict(ing) for ing in ingredients]
     except Exception as e:
         print(f"Error getting ingredients for recipe {recipe_id}: {e}")
-        conn.close()
         return []
 
 def get_recipe_by_id(recipe_id):
@@ -169,13 +198,10 @@ def get_recipe_by_id(recipe_id):
             recipe_dict['ingredients'] = get_recipe_ingredients(recipe_id)
             recipe_dict['dietary_tags'] = recipe['dietary_tags'].split(',') if recipe['dietary_tags'] else []
             recipe_dict['races'] = recipe['races'].split(',') if recipe['races'] else []
-            conn.close()
             return recipe_dict
-        conn.close()
         return None
     except Exception as e:
         print(f"Error getting recipe {recipe_id}: {e}")
-        conn.close()
         return None
 
 def generate_meal_plan(days, ingredients=None, dietary_prefs=None, race=None):
@@ -374,9 +400,11 @@ def rate_recipe(recipe_id):
         print(f"Error rating recipe: {e}")
         return jsonify({'success': False, 'message': 'Error saving rating'})
 
-# OPTIMIZATION: Pre-create reusable PDF styles (defined once, not per request)
+# OPTIMIZATION: Pre-create reusable PDF styles and server-side PDF cache (defined once, not per request)
 _pdf_styles = None
 _pdf_table_style = None
+_pdf_cache = {}  # Server-side PDF cache (plan_hash -> pdf_bytes)
+_pdf_cache_max_size = 50  # Limit cache size
 
 def get_pdf_styles():
     """Get cached PDF styles (created once and reused)"""
@@ -415,22 +443,22 @@ def get_pdf_styles():
 
 @app.route('/export_pdf')
 def export_pdf():
-    """Generate and download PDF of current meal plan (optimized with caching)"""
+    """Generate and download PDF of current meal plan (optimized with server-side caching)"""
     if 'current_meal_plan' not in session:
         return "No meal plan to export", 400
     
     try:
         # OPTIMIZATION: Check if we have a cached PDF for this exact meal plan
+        global _pdf_cache
         meal_plan = session['current_meal_plan']
         metadata = session.get('plan_metadata', {})
         
-        # Create a hash of the meal plan for caching
+        # Create a hash of the meal plan for caching (server-side, not in session)
         plan_hash = hashlib.md5(json.dumps(meal_plan, sort_keys=True).encode()).hexdigest()
-        cached_pdf_key = f'cached_pdf_{plan_hash}'
         
-        if cached_pdf_key in session:
-            # Return cached PDF
-            pdf_bytes = session[cached_pdf_key]
+        if plan_hash in _pdf_cache:
+            # Return cached PDF from server-side cache
+            pdf_bytes = _pdf_cache[plan_hash]
             response = app.response_class(
                 pdf_bytes,
                 status=200,
@@ -500,8 +528,14 @@ def export_pdf():
         buffer.seek(0)
         pdf_bytes = buffer.getvalue()
         
-        # Cache the PDF in session (for repeated downloads)
-        session[cached_pdf_key] = pdf_bytes
+        # Cache the PDF in server-side cache (for repeated downloads)
+        _pdf_cache[plan_hash] = pdf_bytes
+        
+        # Limit cache size to prevent memory bloat
+        if len(_pdf_cache) > _pdf_cache_max_size:
+            # Remove oldest entry (simple FIFO, could use LRU)
+            first_key = next(iter(_pdf_cache))
+            del _pdf_cache[first_key]
         
         # Create response with proper headers for server-side download
         response = app.response_class(
