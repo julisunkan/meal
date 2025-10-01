@@ -7,8 +7,9 @@ Generates meal plans based on fridge ingredients, dietary preferences, and cultu
 import sqlite3
 import json
 import random
+import hashlib
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, jsonify, send_file, session
+from flask import Flask, render_template, request, jsonify, send_file, session, g
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -32,14 +33,30 @@ def favicon():
     """Serve the favicon"""
     return send_file('static/icons/favicon-32.png', mimetype='image/png')
 
-def get_db_connection():
-    """Create a database connection"""
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+def get_db():
+    """Get per-request database connection (reused across the request)"""
+    if 'db' not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row
+    return g.db
 
-def get_recipes_by_filters(ingredients=None, dietary_prefs=None, race=None, meal_type=None):
-    """Get recipes filtered by various criteria"""
+@app.teardown_appcontext
+def close_db(error):
+    """Close database connection at end of request"""
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+def get_db_connection():
+    """Legacy wrapper - uses get_db() for connection reuse"""
+    return get_db()
+
+def get_recipes_by_filters(ingredients=None, dietary_prefs=None, race=None, meal_type=None, skip_order=False):
+    """Get recipes filtered by various criteria
+    
+    Args:
+        skip_order: If True, skip ORDER BY for better performance (useful for meal plan generation)
+    """
     conn = get_db_connection()
     
     # Base query
@@ -101,15 +118,15 @@ def get_recipes_by_filters(ingredients=None, dietary_prefs=None, race=None, meal
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
     
-    query += " ORDER BY r.title"
+    # Only add ORDER BY if needed (skip for performance in meal plan generation)
+    if not skip_order:
+        query += " ORDER BY r.title"
     
     try:
         recipes = conn.execute(query, params).fetchall()
-        conn.close()
         return [dict(recipe) for recipe in recipes]
     except Exception as e:
         print(f"Error getting recipes: {e}")
-        conn.close()
         return []
 
 def get_recipe_ingredients(recipe_id):
@@ -162,9 +179,30 @@ def get_recipe_by_id(recipe_id):
         return None
 
 def generate_meal_plan(days, ingredients=None, dietary_prefs=None, race=None):
-    """Generate a meal plan for the specified number of days"""
+    """Generate a meal plan for the specified number of days (optimized with batched queries)"""
     meal_types = ['breakfast', 'lunch', 'dinner', 'appetizer', 'dessert', 'drink']
     meal_plan = {}
+    
+    # OPTIMIZATION: Pre-fetch all recipes by meal type in one batch per type (6 queries total max)
+    # This replaces the N+1 query pattern (days * 6 queries)
+    recipes_by_type = {}
+    fallback_by_type = {}
+    
+    for meal_type in meal_types:
+        # Primary filtered recipes
+        recipes_by_type[meal_type] = get_recipes_by_filters(
+            ingredients=ingredients,
+            dietary_prefs=dietary_prefs,
+            race=race,
+            meal_type=meal_type,
+            skip_order=True  # Skip ORDER BY for performance
+        )
+        
+        # Fallback recipes (only meal type filter)
+        fallback_by_type[meal_type] = get_recipes_by_filters(
+            meal_type=meal_type,
+            skip_order=True  # Skip ORDER BY for performance
+        )
     
     # Track all used recipes globally - no recipe should appear twice
     used_recipe_ids = set()
@@ -174,17 +212,10 @@ def generate_meal_plan(days, ingredients=None, dietary_prefs=None, race=None):
         meal_plan[day_key] = {}
         
         for meal_type in meal_types:
-            recipes = get_recipes_by_filters(
-                ingredients=ingredients,
-                dietary_prefs=dietary_prefs,
-                race=race,
-                meal_type=meal_type
-            )
+            # Use pre-fetched recipes
+            recipes = recipes_by_type[meal_type]
             
             if recipes:
-                # Shuffle recipes for better randomness
-                random.shuffle(recipes)
-                
                 # Only select recipes that haven't been used before
                 available_recipes = [r for r in recipes if r['id'] not in used_recipe_ids]
                 
@@ -193,59 +224,78 @@ def generate_meal_plan(days, ingredients=None, dietary_prefs=None, race=None):
                     meal_plan[day_key][meal_type] = selected_recipe
                     used_recipe_ids.add(selected_recipe['id'])
                 else:
-                    # If no unused recipes for this specific combination, try fallback
-                    fallback_recipes = get_recipes_by_filters(meal_type=meal_type)
-                    if fallback_recipes:
-                        random.shuffle(fallback_recipes)
-                        available_fallback = [r for r in fallback_recipes if r['id'] not in used_recipe_ids]
-                        
-                        if available_fallback:
-                            selected_recipe = random.choice(available_fallback)
-                            meal_plan[day_key][meal_type] = selected_recipe
-                            used_recipe_ids.add(selected_recipe['id'])
-                        # If still no recipes available, skip this meal slot
-            else:
-                # Fallback to any recipes of this meal type that haven't been used
-                fallback_recipes = get_recipes_by_filters(meal_type=meal_type)
-                if fallback_recipes:
-                    random.shuffle(fallback_recipes)
+                    # Try fallback (pre-fetched)
+                    fallback_recipes = fallback_by_type[meal_type]
                     available_fallback = [r for r in fallback_recipes if r['id'] not in used_recipe_ids]
                     
                     if available_fallback:
                         selected_recipe = random.choice(available_fallback)
                         meal_plan[day_key][meal_type] = selected_recipe
                         used_recipe_ids.add(selected_recipe['id'])
+            else:
+                # Use fallback (pre-fetched)
+                fallback_recipes = fallback_by_type[meal_type]
+                available_fallback = [r for r in fallback_recipes if r['id'] not in used_recipe_ids]
+                
+                if available_fallback:
+                    selected_recipe = random.choice(available_fallback)
+                    meal_plan[day_key][meal_type] = selected_recipe
+                    used_recipe_ids.add(selected_recipe['id'])
     
     return meal_plan
 
 def calculate_missing_ingredients(meal_plan, user_ingredients):
-    """Calculate ingredients needed for the meal plan that user doesn't have"""
+    """Calculate ingredients needed for the meal plan that user doesn't have (optimized with batch query)"""
     if not user_ingredients:
         user_ingredients = []
     
-    user_ingredients_lower = [ing.strip().lower() for ing in user_ingredients]
-    needed_ingredients = {}
-    
+    # Collect all recipe IDs from the meal plan
+    recipe_ids = []
     for day, meals in meal_plan.items():
         for meal_type, recipe in meals.items():
-            if recipe:
-                recipe_ingredients = get_recipe_ingredients(recipe['id'])
-                for ingredient in recipe_ingredients:
-                    ing_name = ingredient['name'].lower()
-                    category = ingredient['category']
-                    
-                    # Check if user has this ingredient (or substitution)
-                    has_ingredient = any(user_ing in ing_name or ing_name in user_ing 
-                                       for user_ing in user_ingredients_lower)
-                    
-                    if not has_ingredient:
-                        if category not in needed_ingredients:
-                            needed_ingredients[category] = set()
-                        needed_ingredients[category].add(ingredient['name'])
+            if recipe and recipe.get('id'):
+                recipe_ids.append(recipe['id'])
+    
+    if not recipe_ids:
+        return {}
+    
+    # OPTIMIZATION: Single batched query for all ingredients
+    conn = get_db_connection()
+    placeholders = ','.join('?' * len(recipe_ids))
+    query = f"""
+        SELECT i.name, i.category
+        FROM ingredients i
+        JOIN recipe_ingredients ri ON i.id = ri.ingredient_id
+        WHERE ri.recipe_id IN ({placeholders})
+        ORDER BY i.category, i.name
+    """
+    
+    all_ingredients = conn.execute(query, recipe_ids).fetchall()
+    
+    # Pre-build set of user ingredients for faster lookup
+    user_ingredients_set = set(ing.strip().lower() for ing in user_ingredients)
+    needed_ingredients = {}
+    
+    for ingredient in all_ingredients:
+        ing_name = ingredient['name']
+        ing_name_lower = ing_name.lower()
+        category = ingredient['category']
+        
+        # Check if user has this ingredient (exact or partial match)
+        has_ingredient = False
+        for user_ing in user_ingredients_set:
+            if user_ing in ing_name_lower or ing_name_lower in user_ing:
+                has_ingredient = True
+                break
+        
+        if not has_ingredient:
+            if category not in needed_ingredients:
+                needed_ingredients[category] = set()
+            needed_ingredients[category].add(ing_name)
     
     # Convert sets to lists for JSON serialization
     for category in needed_ingredients:
-        needed_ingredients[category] = list(needed_ingredients[category])
+        needed_ingredients[category] = sorted(list(needed_ingredients[category]))
     
     return needed_ingredients
 
