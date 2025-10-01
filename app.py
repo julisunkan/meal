@@ -21,7 +21,7 @@ import os
 app = Flask(__name__)
 app.secret_key = os.environ.get('SESSION_SECRET')
 
-DATABASE = 'data/data/meal_planner.db'
+DATABASE = 'data/meal_planner.db'
 
 # Ensure database exists
 def ensure_database_exists():
