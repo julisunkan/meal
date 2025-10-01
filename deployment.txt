@@ -1,0 +1,82 @@
+
+# Flask Meal Planning App - Deployment Guide
+
+## Replit Autoscale Deployment
+
+This Flask meal planning application is configured for deployment on Replit using Autoscale Deployments.
+
+### Pre-Deployment Setup ✅
+
+Your app is already deployment-ready with:
+- ✅ Gunicorn production server configured
+- ✅ Proper port binding (0.0.0.0:5000) 
+- ✅ Environment variables configured (SESSION_SECRET)
+- ✅ SQLite database with optimized indexes
+- ✅ Progressive Web App (PWA) features
+- ✅ Mobile-responsive design
+- ✅ All dependencies in requirements.txt
+
+### Deployment Steps
+
+1. **Test Your App Locally**
+   - Click the "Run" button to verify everything works
+   - Test meal plan generation, PDF export, and PWA features
+
+2. **Deploy to Replit**
+   - Click the "Deploy" button in your workspace
+   - Select "Autoscale Deployment" 
+   - Choose machine power (Small recommended for start)
+   - Set max instances (1-3 recommended for personal use)
+   - Click "Deploy"
+
+3. **Your Live URL**
+   - App will be available at: `<your-repl-name>.replit.app`
+   - SSL/HTTPS automatically enabled
+   - Custom domain can be connected if needed
+
+### Production Configuration
+
+**Current Settings:**
+- Server: Gunicorn WSGI server
+- Workers: 1 worker, 2 threads
+- Port: 5000 (automatically mapped to 80/443)
+- Database: SQLite with performance indexes
+- Session Management: Secure with environment variables
+
+**Performance Features:**
+- Server-side PDF caching for repeated downloads
+- Batched database queries for meal plan generation
+- Optimized database indexes for fast recipe filtering
+- Progressive Web App for offline functionality
+
+### Environment Variables
+
+Required environment variable:
+- `SESSION_SECRET`: Already configured in Replit Secrets
+
+### Scaling & Billing
+
+- **Autoscale**: Automatically scales based on traffic
+- **Cost**: Pay only for actual usage (CPU/RAM during requests)
+- **Performance**: 99.95% uptime guarantee
+- **Scaling**: Up to your configured max instances
+
+### Post-Deployment
+
+After deployment:
+1. Test all features on the live URL
+2. Share the PWA-enabled app with users
+3. Monitor usage in Replit Deployments dashboard
+4. Configure custom domain if desired
+
+### Features Available After Deployment
+
+- ✅ Full meal planning with cultural preferences
+- ✅ PDF and JSON export functionality  
+- ✅ Progressive Web App (installable on mobile)
+- ✅ Recipe rating system
+- ✅ Sample meal plans showcase
+- ✅ Shopping list generation
+- ✅ Mobile-optimized responsive design
+
+Your Flask meal planning app is production-ready for Replit Autoscale Deployment!
