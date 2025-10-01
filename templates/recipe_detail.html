@@ -53,10 +53,27 @@
         </div>
 
         <h6 class="gradient-text mb-2">
-            <i class="fas fa-list-check me-2"></i>Instructions
+            <i class="fas fa-list-check me-2"></i>Step-by-Step Instructions
         </h6>
         <div class="p-3" style="background: var(--bg-color); border-radius: 15px; border-left: 4px solid var(--primary-color);">
-            {{ recipe.instructions }}
+            {% if 'Step 1:' in recipe.instructions %}
+                {% set steps = recipe.instructions.split('Step ') %}
+                {% for step in steps %}
+                    {% if step.strip() %}
+                        {% set step_parts = step.split(':', 1) %}
+                        {% if step_parts|length == 2 %}
+                            <div class="mb-3 p-2" style="background: white; border-radius: 10px; border-left: 3px solid var(--primary-color);">
+                                <div class="fw-bold text-primary mb-1">
+                                    <i class="fas fa-circle-check me-2"></i>Step {{ step_parts[0] }}
+                                </div>
+                                <div class="text-muted">{{ step_parts[1].strip() }}</div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                {{ recipe.instructions }}
+            {% endif %}
         </div>
     </div>
 </div>
